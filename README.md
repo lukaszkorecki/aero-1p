@@ -30,6 +30,8 @@ and you're all set.
 Let's say you have this config map:
 
 ```edn
+;; very simple example
+
 {:github {:org "test"
           ;; read from default account e.g. the personal one
           :pat #op/secret "op://Private/github/test"}
@@ -38,6 +40,27 @@ Let's say you have this config map:
                                   :path "op://Employee/aws/test/access-key-id"}
 
        :access-secret-key #op/secret {:account "mycompany.1password.com"
+                                      :path "op://Employee/aws/test/secrets-access-key"}
+       }
+ }
+
+
+;; you can use #ref to simplify the config a bit
+
+{
+ :op-acc-id "mycompany.1password.com"
+ :github {:org "test"
+          ;; read from default account e.g. the personal one
+          :pat #op/secret {:account #ref [:op-acc-id]
+                           :path "op://Private/github/test"}
+
+          :repo #op/secret {:account #ref [:op-acc-id]
+                            :path "op://Private/github/test/repo"}}
+
+ :aws {:access-key-id #op/secret {:account #ref [:op-acc-id]
+                                  :path "op://Employee/aws/test/access-key-id"}
+
+       :secret-access-key #op/secret {:account #ref [:op-acc-id]
                                       :path "op://Employee/aws/test/secrets-access-key"}
        }
  }
