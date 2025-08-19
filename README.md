@@ -23,32 +23,31 @@ Then add this library to your `deps.edn`:
 
 ```
 
-and you're all set.
+Follow usage guide below:
 
 ## Usage
 
-Let's say you have this config map:
+Here's an example `config.edn` which uses secret references
+
+> ![NOTE]
+> Learn more about 1Password's secret references: https://developer.1password.com/docs/cli/secret-references/
 
 ```edn
-;; very simple example
+;; Simple example, load secrts from default account:
 
 {:github {:org "test"
           ;; read from default account e.g. the personal one
           :pat #op/secret "op://Private/github/test"}
 
- :aws {:access-key-id #op/secret {:account "mycompany.1password.com"
-                                  :path "op://Employee/aws/test/access-key-id"}
-
-       :access-secret-key #op/secret {:account "mycompany.1password.com"
-                                      :path "op://Employee/aws/test/secrets-access-key"}
-       }
- }
+:openai-api-key #op/secret "op://Private/OpenAi/token"}
+```
 
 
-;; you can use #ref to simplify the config a bit
+A more complicated example, where secrets are loaded from a company/org account:
 
-{
- :op-acc-id "mycompany.1password.com"
+```edn
+
+{:op-acc-id "mycompany.1password.com"
  :github {:org "test"
           ;; read from default account e.g. the personal one
           :pat #op/secret {:account #ref [:op-acc-id]
@@ -59,30 +58,24 @@ Let's say you have this config map:
 
  :aws {:access-key-id #op/secret {:account #ref [:op-acc-id]
                                   :path "op://Employee/aws/test/access-key-id"}
-
        :secret-access-key #op/secret {:account #ref [:op-acc-id]
-                                      :path "op://Employee/aws/test/secrets-access-key"}
-       }
- }
-
+                                      :path "op://Employee/aws/test/secrets-access-key"}}}
 
 ```
 
-you can load it this way:
+Next step is to require `aero-1p` along with Aero and read the config:
 
 
 ```clojure
-(require
- '[aero.core :as aero]
- '[clojrue.java.io :as io]
- '[aero-1p.core])
+(ns app.config
+  (:require [clojrue.java.io :as io]
+            [aero-1p.core] ;; register #op/secret tag
+            [aero.core :as aero])
 
 (def store (aero/read-config (io/resource "config.edn")))
 ```
 
 
-## Tips & Notes
+## Notes
 
-- you can find secret refrences by using the `op` cli itself, or using 'copy secret reference' options from secret's context menu
-- because each secret is read individually via shell invokations, given sufficient number of secrets config load might be slow, this is something that might improve in the future, we will see
-  - you can alternatively use `op inject` which loads secrets in one go
+This library has been optimized so that only 1st secret fetch is a truly blocking operation, since 1Password will require authorization on first fetch. Once that happens all remaining secrets will be fetched using background threads.
