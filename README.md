@@ -46,7 +46,6 @@ Here's an example `config.edn` which uses secret references
 A more complicated example, where secrets are loaded from a company/org account:
 
 ```edn
-
 {:op-acc-id "mycompany.1password.com"
  :github {:org "test"
           ;; read from default account e.g. the personal one
@@ -68,7 +67,7 @@ Next step is to require `aero-1p` along with Aero and read the config:
 
 ```clojure
 (ns app.config
-  (:require [clojrue.java.io :as io]
+  (:require [clojure.java.io :as io]
             [aero-1p.core] ;; register #op/secret tag
             [aero.core :as aero])
 
@@ -79,3 +78,5 @@ Next step is to require `aero-1p` along with Aero and read the config:
 ## Notes
 
 This library has been optimized so that only 1st secret fetch is a truly blocking operation, since 1Password will require authorization on first fetch. Once that happens all remaining secrets will be fetched using background threads.
+
+Note that if your config reads secrets from multiple accounts, you'll need to confirm access using Touch ID once per each account.
