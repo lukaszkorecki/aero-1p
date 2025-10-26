@@ -10,22 +10,29 @@ This is usually very helpful when combined with Aero's other features like profi
 
 ## Setup
 
-First of all, make sure you [1Password CLI is configured and installed](https://developer.1password.com/docs/cli/get-started).
+First of all, make sure you have [1Password CLI configured and installed](https://developer.1password.com/docs/cli/get-started).
 
 Then add this library to your `deps.edn`:
 
 
 ```edn
 {:src ["src" "resources"]
- :deps {org.clojure/clojure {:mvn/version "1.12.0"} ;; required
-         aero-1p/aero-1p {:git/url "https://github.com/lukaszkorecki/aero-1p.git"
-                          :git/sha "...."}}
+ :deps {org.clojure/clojure {:mvn/version "1.12.0"} ;; min required
+        aero/aero {....}
+        aero-1p/aero-1p {:git/url "https://github.com/lukaszkorecki/aero-1p.git"
+                         :git/sha "...."}}
 
 ```
 
-Follow usage guide below:
+### Supported platforms
+
+- [x] Clojure on the JVM
+- [ ] Babashka (most likely works out of the box, needs checking)
+- [ ] ~~ClojureScript~~ - PRs welcomed, I don't use Cljs myself
+
 
 ## Usage
+
 
 Here's an example `config.edn` which uses secret references
 
