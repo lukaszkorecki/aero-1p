@@ -39,33 +39,37 @@ Here's an example `config.edn` which uses secret references
 > [!NOTE]
 > Learn more about 1Password's secret references: https://developer.1password.com/docs/cli/secret-references/
 
-```edn
-;; Simple example, load secrets from default account:
+```clojure
+;; Simple example, load secrets from default account (e.g my.1password.com):
 
 {:github {:org "test"
           ;; read from default account e.g. the personal one
-          :pat #op/secret "op://Private/github/test"}
+          :pat #op/secret "op://Private/github/pat"}
 
  :openai-api-key #op/secret "op://Private/OpenAi/token"}
 ```
 
 
-A more complicated example, where secrets are loaded from a company/org account:
+A more complicated example, where secrets are loaded from a company/org account and personal vault:
 
-```edn
-{:op-acc-id "mycompany.1password.com"
+```clojure
+{;; DRY the config a bit
+ :op-acc-id "mycompany.1password.com"
+
+ ;; read static creds from company managed vault
+ :aws {:access-key-id #op/secret {:account #ref [:op-acc-id]
+                                  :path "op://Employee/aws/test/access-key-id"}
+       :secret-access-key #op/secret {:account #ref [:op-acc-id]
+                                      :path "op://Employee/aws/test/secrets-access-key"}}
+
+ ;; read from default account e.g. the personal one
  :github {:org "test"
-          ;; read from default account e.g. the personal one
+
           :pat #op/secret {:account #ref [:op-acc-id]
                            :path "op://Private/github/test"}
 
           :repo #op/secret {:account #ref [:op-acc-id]
-                            :path "op://Private/github/test/repo"}}
-
- :aws {:access-key-id #op/secret {:account #ref [:op-acc-id]
-                                  :path "op://Employee/aws/test/access-key-id"}
-       :secret-access-key #op/secret {:account #ref [:op-acc-id]
-                                      :path "op://Employee/aws/test/secrets-access-key"}}}
+                            :path "op://Private/github/test/repo"}}}
 
 ```
 
