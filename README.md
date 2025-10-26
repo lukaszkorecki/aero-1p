@@ -1,10 +1,10 @@
-# 1password reader for Aero
+# 1Password integration for Aero
 
 ## What is it?
 
-As the title says - this tiny library allows for reading data from 1Password and injecting them into configs read via [Aero](https://github.com/juxt/aero).
+This tiny library allows for reading data from 1Password and injecting them into configs read via [Aero](https://github.com/juxt/aero).
 
-Using 1Password's [secret references](https://developer.1password.com/docs/cli/secret-references) we can dynamically inject secrets (and other data found in 1password), into your configuration at read time.
+Using 1Password's [secret references](https://developer.1password.com/docs/cli/secret-references) we can dynamically inject secrets (and other data found in 1Password), into your configuration at read time.
 
 This is usually very helpful when combined with Aero's other features like profiles or dynamic includes, since 1Password CLI might not be available in outside of your local environment.
 
@@ -36,17 +36,17 @@ Then add this library to your `deps.edn`:
 
 Here's an example `config.edn` which uses secret references
 
-> ![NOTE]
+> [!NOTE]
 > Learn more about 1Password's secret references: https://developer.1password.com/docs/cli/secret-references/
 
 ```edn
-;; Simple example, load secrts from default account:
+;; Simple example, load secrets from default account:
 
 {:github {:org "test"
           ;; read from default account e.g. the personal one
           :pat #op/secret "op://Private/github/test"}
 
-:openai-api-key #op/secret "op://Private/OpenAi/token"}
+ :openai-api-key #op/secret "op://Private/OpenAi/token"}
 ```
 
 
@@ -69,7 +69,11 @@ A more complicated example, where secrets are loaded from a company/org account:
 
 ```
 
-Next step is to require `aero-1p` along with Aero and read the config:
+> [!NOTE]
+> You can reference multiple accounts in one config, e.g. pull some from your default account (my.1password.com)
+> and some from a team/company ccount (<yourcompany>.1password.com).
+
+Next step is to require `aero-1p` along with Aero and read the config in your application
 
 
 ```clojure
@@ -79,6 +83,27 @@ Next step is to require `aero-1p` along with Aero and read the config:
             [aero.core :as aero])
 
 (def store (aero/read-config (io/resource "config.edn")))
+```
+
+This is a simplified example, in an application which is deployed to the cloud 🌧️, secrets would be injected as environment variables in that environment, but read from 1Password locally. This is where [Aero's profiles](https://github.com/juxt/aero#profile) are very handy:
+
+
+```clojure
+{:application {:api-key #profile {:development #op/secret "op://Private/some-vendor/api-key"
+                                  :production #env "API_KEY"}}}
+```
+
+and in the application code:
+
+```clojure
+;; you get the idea
+(defn get-profile []
+  (if (System/getenv "IN_THE_CLOUD")
+    :production
+    :development))
+
+(def config
+  (aero/read-config (io/resource "config.edn") (get-profile)))
 ```
 
 
