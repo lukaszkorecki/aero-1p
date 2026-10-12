@@ -1,53 +1,53 @@
 (ns aero-1p.core
-  (:refer-clojure :exclude [run!])
-  (:require [aero.core :as aero]
-            [clojure.java.process :as proc]
-            [clojure.string :as str])
-  (:import [java.util.concurrent Semaphore]))
+  "Aero reader tags for 1Password.
+   `op` client can be swapped by passing `:aero-1p/op-cli` (fn of account -> `aero-1p.op/OpCli`)
+   in `aero/read-config` opts."
+  (:require [aero-1p.env-file :as env-file]
+            [aero-1p.op :as op]
+            [aero.core :as aero]
+            [clojure.java.io :as io])
+  (:import [java.util.concurrent ConcurrentHashMap]))
 
-(defonce ^:private authorized?
-  (atom false))
-
-(defonce ^:private op-semaphore
-  (Semaphore. 1))
-
-(defn ^:private conf->op-cmd
-  "Constructs the command to read a secret from 1Password CLI."
-  [{:keys [account path]}]
-  (->> ["op" "read"
-        (when-not (contains? #{nil ::default} account)
-          ["--account" account])
-        path]
-       flatten
-       (remove nil?)))
-
-(defn ^:private run!
-  "Runs the command and returns the output as a string.
-   The command is expected to be a sequence of strings."
-  [cmd]
-  (-> (apply proc/start cmd)
-      proc/stdout
-      slurp
-      str/trim))
-
-(defn ^:private get-secret
-  "Fetches a secret from 1Password using the provided account and path.
-   Returns a string containing the secret."
-  [{:keys [account path]}]
-  (run! (conf->op-cmd {:account account :path path})))
-
-(defn- op-secret* [value]
-  (let [{:keys [account path]} (cond
-                                 (string? value) {:account ::default
-                                                  :path value}
-                                 (map? value) value)]
-    (aero.core/->Deferred (future
-                            (Semaphore/.acquire op-semaphore)
-                            (try
-                              (get-secret {:account account :path path})
-                              (finally
-                                (Semaphore/.release op-semaphore)))))))
+(defn ^:private op-cli [opts account]
+  ((get opts :aero-1p/op-cli op/cli) account))
 
 (defmethod aero/reader 'op/secret
-  [_opts _tag value]
-  (op-secret* value))
+  [opts _tag value]
+  (let [{:keys [account path]} (if (string? value) {:path value} value)
+        client (op-cli opts account)]
+    (aero/->Deferred (future (op/read client path)))))
+
+;;; env file support
+
+;; [client resource-url] -> delay of parsed env map
+;; ensures `op inject` runs once per file+account, no matter how many config
+;; values reference it
+(defonce ^:private env-file-cache
+  (ConcurrentHashMap.))
+
+(defn clear-cache!
+  "Drops cached results of `op inject`, next config read will invoke `op` again."
+  []
+  (ConcurrentHashMap/.clear env-file-cache))
+
+(defn ^:private load-env-file
+  "Returns parsed env map for given resource, running `op inject` at most once
+   per [client url]. Failures are not cached."
+  [client url]
+  (let [k [client (str url)]
+        cached (ConcurrentHashMap/.computeIfAbsent
+                env-file-cache k
+                (fn [_] (delay (env-file/parse (op/inject client (slurp url))))))]
+    (try
+      @cached
+      (catch Exception e
+        ;; only evicts if no one replaced the entry in the meantime
+        (ConcurrentHashMap/.remove env-file-cache k cached)
+        (throw e)))))
+
+(defmethod aero/reader 'op/env
+  [opts _tag {:keys [file account] var-name :var}]
+  (if-let [url (and file (io/resource file))]
+    (let [client (op-cli opts account)]
+      (aero/->Deferred (future (get (load-env-file client url) var-name))))
+    (System/getenv var-name)))
