@@ -83,7 +83,7 @@ Next step is to require `aero-1p` along with Aero and read the config in your ap
 ```clojure
 (ns app.config
   (:require [clojure.java.io :as io]
-            [aero-1p.core] ;; register #op/secret tag
+            [aero-1p.core] ;; register #op/secret and #op/env tags
             [aero.core :as aero])
 
 (def store (aero/read-config (io/resource "config.edn")))
@@ -111,8 +111,39 @@ and in the application code:
 ```
 
 
+### Secrets from env file templates
+
+If your project already keeps secret references in an env file template (e.g. one used with `op inject` or `op run` when shipping container images), you can read values from it directly instead of repeating each reference in your config.
+
+Given `resources/secrets.env`:
+
+```shell
+# export is optional
+export DB_PASSWORD=op://Employee/db/password
+API_TOKEN=op://Employee/api/token
+```
+
+refer to its variables in `config.edn`:
+
+```clojure
+{:op-acc-id "mycompany.1password.com"
+
+ :db {:password #op/env {:file "secrets.env"
+                         :var "DB_PASSWORD"
+                         :account #ref [:op-acc-id]}} ;; optional, same as #op/secret
+
+ :api-token #op/env {:file "secrets.env" :var "API_TOKEN"}}
+```
+
+The file is loaded from the classpath and passed through `op inject` once per file and account, no matter how many values refer to it. If the file is not on the classpath, the value is read from the environment variable named by `:var` instead, so the same config works in environments where secrets are injected as env vars.
+
+> [!NOTE]
+> The parser is intentionally simple: blank lines, `#` comment lines, optional `export` and quoted values are supported. There is no variable expansion, no multi-line values and no inline comments - `#` is kept as part of the value.
+
 ## Notes
 
 This library has been optimized so that only 1st secret fetch is a truly blocking operation, since 1Password will require authorization on first fetch. Once that happens all remaining secrets will be fetched using background threads.
+
+Results of `op inject` are cached for the lifetime of the process, call `(aero-1p.core/clear-cache!)` to re-read env files on the next config load.
 
 Note that if your config reads secrets from multiple accounts, you'll need to confirm access using Touch ID once per each account.
