@@ -1,0 +1,28 @@
+name: Test
+on: push
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: clojure:temurin-25-trixie-slim
+
+    steps:
+    - uses: actions/checkout@v7.0.1
+
+    - name: Cache deps
+      uses: actions/cache@v6.1.0
+      with:
+        path: |
+          ~/.m2/repository
+          ~/.gitlibs
+        key: v1-deps-${{ hashFiles('deps.edn') }}
+        restore-keys: |
+          v1-deps-
+
+    - name: Run tests
+      run: clojure -M:test
