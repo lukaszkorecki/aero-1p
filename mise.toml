@@ -1,0 +1,34 @@
+[tools]
+java = "temurin-25"
+
+[tasks.test]
+description = "Run tests"
+run = "clojure -M:test"
+
+[tasks.update-deps]
+description = "Check for outdated dependencies"
+run = "clojure -M:dev/outdated"
+
+[tasks.clean]
+description = "Clean build artifacts"
+run = "clojure -T:build clean"
+
+[tasks.build]
+description = "Build jar (snapshot=true for snapshot build)"
+usage = 'arg "[opts]..." var=#true help="key=value build args, e.g. snapshot=true"'
+run = 'clojure -T:build jar {% for o in usage.opts %}:{{ o | split(pat="=") | first }} {{ o | split(pat="=") | last }} {% endfor %}'
+
+[tasks.publish]
+description = "Build and publish jar (snapshot=true for snapshot build)"
+usage = 'arg "[opts]..." var=#true help="key=value build args, e.g. snapshot=true"'
+run = 'clojure -T:build publish {% for o in usage.opts %}:{{ o | split(pat="=") | first }} {{ o | split(pat="=") | last }} {% endfor %}'
+
+[tasks.release]
+description = "Clean, build jar, and publish"
+depends = ["clean"]
+run = "clojure -T:build publish"
+
+[tasks.install]
+description = "Build and install jar locally (snapshot=true for snapshot build)"
+usage = 'arg "[opts]..." var=#true help="key=value build args, e.g. snapshot=true"'
+run = 'clojure -T:build install {% for o in usage.opts %}:{{ o | split(pat="=") | first }} {{ o | split(pat="=") | last }} {% endfor %}'

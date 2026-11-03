@@ -1,0 +1,12 @@
+{:op-acc-id "mycompany.1password.com"
+ :db {:password #op/env {:file "secrets.env"
+                         :var "DB_PASSWORD"
+                         :account #ref [:op-acc-id]}}
+ :api {:token #op/env {:file "secrets.env"
+                       :var "API_TOKEN"
+                       :account #ref [:op-acc-id]}
+       :single #op/env {:file "secrets.env"
+                        :var "SINGLE"
+                        :account #ref [:op-acc-id]}}
+ :personal {:token #op/env {:file "secrets.env" :var "API_TOKEN"}}
+ :missing-file #op/env {:file "nope.env" :var "HOME"}}

@@ -1,3 +1,12 @@
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.12.1"}
-        aero/aero {:mvn/version "1.1.6"}}}
+        aero/aero {:mvn/version "1.1.6"}}
+ :aliases {:test {:main-opts ["-m" "kaocha.runner"]
+                  :jvm-opts ["-XX:-OmitStackTraceInFastThrow"
+                             "-Duser.timezone=UTC"
+                             "-Dfile.encoding=UTF-8"]
+                  :extra-paths ["test"]
+                  :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}}
+           :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.14"}
+                          slipset/deps-deploy {:mvn/version "0.2.5"}}
+                   :ns-default build}}}
