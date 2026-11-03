@@ -14,20 +14,20 @@ First of all, make sure you have [1Password CLI configured and installed](https:
 
 Then add this library to your `deps.edn`:
 
+[![Clojars Project](https://img.shields.io/clojars/v/org.clojars.lukaszkorecki/aero-1p.svg)](https://clojars.org/org.clojars.lukaszkorecki/aero-1p)
 
 ```edn
 {:src ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.12.0"} ;; min required
         aero/aero {....}
-        aero-1p/aero-1p {:git/url "https://github.com/lukaszkorecki/aero-1p.git"
-                         :git/sha "...."}}
+        org.clojars.lukaszkorecki/aero-1p {:mvn/version "VERSION"}
 
 ```
 
 ### Supported platforms
 
 - [x] Clojure on the JVM
-- [ ] Babashka (most likely works out of the box, needs checking)
+- [x] Babashka (most likely works out of the box, needs checking)
 - [ ] ~~ClojureScript~~ - PRs welcomed, I don't use Cljs myself
 
 
